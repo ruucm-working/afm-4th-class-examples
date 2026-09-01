@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>#신사맛집 인스타 픽 3선</title>
+<meta name="description" content="인스타그램 #신사맛집 해시태그 게시물 13건을 분석해 뽑은 베스트 3곳">
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<!-- CDN 버전 고정 필수. Babel 은 반드시 7.x (8.x 는 인라인 text/babel 미지원) -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.25.9/babel.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  body {
+    font-family: 'Noto Sans KR', system-ui, -apple-system, sans-serif;
+    background: #0a0a0b;
+  }
+  .font-display { font-family: 'Gowun Dodum', 'Noto Sans KR', sans-serif; }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
+
+  /* 배경 글로우 — Tailwind 유틸리티로 표현 불가 */
+  .glow-bg::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(60rem 30rem at 15% -10%, rgba(255,138,61,.20), transparent 60%),
+      radial-gradient(50rem 28rem at 90% 10%, rgba(214,54,132,.16), transparent 60%);
+    pointer-events: none;
+  }
+  .insta-gradient {
+    background: linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);
+  }
+  .text-gradient {
+    background: linear-gradient(92deg,#ffb46b,#ff7a59 45%,#e35d8a);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(14px);} to { opacity:1; transform:none;} }
+  .fade-up { animation: fadeUp .5s cubic-bezier(.22,.8,.3,1) both; }
+  @keyframes growBar { from { width: 0; } }
+  .bar { animation: growBar .9s cubic-bezier(.22,.8,.3,1) both; }
+  @media (prefers-reduced-motion: reduce) {
+    .fade-up, .bar { animation: none !important; }
+  }
+  ::selection { background: rgba(255,138,61,.35); }
+  /* 표 가로 스크롤용 얇은 스크롤바 */
+  .thin-scroll::-webkit-scrollbar { height: 8px; }
+  .thin-scroll::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 99px; }
+  .thin-scroll::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body class="bg-[#0a0a0b] text-zinc-200 antialiased">
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo, useCallback } = React;
+
+// ========================================
+// 📊 DATA — README.md (조사일 2026-09-01) 기준
+// ========================================
+
+const SURVEY_DATE = '2026-09-01';
+const TAG_URL = 'https://www.instagram.com/explore/search/keyword/?q=%23%EC%8B%A0%EC%82%AC%EB%A7%9B%EC%A7%91';
+
+const PICKS = [
+  {
+    rank: 1, medal: '🥇', name: '테보', sub: '신사 우동',
+    category: '자가제면 우동',
+    accent: 'from-amber-400 to-orange-500',
+    image: 'screenshots/pick1-tebo.png',
+    where: '신사역 인근',
+    place: null,
+    hours: '11:30 – 20:30',
+    price: '카케우동+모시조개 13,000원 · 붓카케우동+텐푸라 14,000원',
+    likes: 765, comments: 20, shares: 49,
+    author: '서울가이드', authorHandle: 'seoul__guide', followers: 221000,
+    date: '2026-06-12',
+    link: 'https://www.instagram.com/p/DZe0bFck6JX/',
+    storeHandle: 'tebo.seoul',
+    blurb: '오픈주방에서 반죽·제면을 바로 하는 자가제면 우동집. 이효리·개코 등 연예인 맛집으로도 언급됨.',
+    highlight: { label: '공유 49건 — 후보 중 최다', text: '"저장해두고 실제로 가려는" 반응이 가장 강했던 게시물.' },
+    caution: null,
+  },
+  {
+    rank: 2, medal: '🥈', name: '영동설렁탕', sub: '해장 · 술안주',
+    category: '설렁탕 · 수육',
+    accent: 'from-zinc-300 to-zinc-500',
+    image: 'screenshots/pick2-yeongdong.png',
+    where: '서울 서초구 강남대로101안길 24',
+    place: '서울 서초구 강남대로101안길 24',
+    hours: '24시간 · 연중무휴',
+    price: '설렁탕 15,000원 · 수육 52,000원',
+    likes: 356, comments: 33, shares: 11,
+    author: '먹지니', authorHandle: 'mukgenie', followers: 229000,
+    date: '2025-12-03',
+    link: 'https://www.instagram.com/p/DRzKKVViVZJ/',
+    storeHandle: null,
+    blurb: '국물이 진한 설렁탕과 수육. 신사에서 술 마신 뒤 해장 코스로 픽하기 좋음.',
+    highlight: { label: '댓글 33개 — 후보 중 최다', text: '3개 픽 중 유일하게 시간 제약이 없는 곳 (24시간 영업).' },
+    caution: null,
+  },
+  {
+    rank: 3, medal: '🥉', name: '고메램 신사점', sub: '어린 양고기',
+    category: '양고기',
+    accent: 'from-orange-300 to-rose-500',
+    image: 'screenshots/pick3-gourmetlamb.png',
+    where: '서울 강남구 강남대로152길 11 2층',
+    place: '서울 강남구 강남대로152길 11 2층',
+    hours: '매일 11:30 – 22:00 (브레이크 14:30 – 17:00)',
+    price: '런치세트 — 양고기 3종 + 사이드 + 생과일 아이스크림 (금액 미표기)',
+    likes: 352, comments: 13, shares: 12,
+    author: '신콕', authorHandle: 'sh.cookkook', followers: 240000,
+    date: '2026-03-01',
+    link: 'https://www.instagram.com/p/DVVPCUgjxFe/',
+    storeHandle: null,
+    blurb: '생후 1년 미만 냉장 어린 양이라 잡내가 없고, 직원이 다 구워주는 방식. 런치세트 하나로 풀코스가 나옴.',
+    highlight: { label: '작성 계정 팔로워 24만 — 후보 중 최다', text: '점심 가성비 픽.' },
+    caution: '캡션에 가격이 없어 방문 전 확인 필요.',
+  },
+];
+
+// 전체 후보 비교표 (좋아요 비공개 건 포함)
+const CANDIDATES = [
+  { name: '테보',           cat: '우동',              likes: 765,  comments: 20, shares: 49,   author: '서울가이드', followers: 221000, date: '2026-06-12', verdict: 'pick',     rank: 1,    note: '1위' },
+  { name: '영동설렁탕',     cat: '설렁탕',            likes: 356,  comments: 33, shares: 11,   author: '먹지니',     followers: 229000, date: '2025-12-03', verdict: 'pick',     rank: 2,    note: '2위' },
+  { name: '고메램 신사점',  cat: '양고기',            likes: 352,  comments: 13, shares: 12,   author: '신콕',       followers: 240000, date: '2026-03-01', verdict: 'pick',     rank: 3,    note: '3위' },
+  { name: '봉금',           cat: '한식주점',          likes: 201,  comments: 16, shares: 10,   author: '뚜언니',     followers: 71000,  date: '2026-07-18', verdict: 'runner',   rank: 4,    note: '4위' },
+  { name: '대봉칼국수보쌈', cat: '보쌈·칼국수',       likes: 120,  comments: 4,  shares: 1,    author: '투고리스트', followers: 64000,  date: '2026-03-29', verdict: 'weak',     rank: null, note: '반응 약함' },
+  { name: '핫쵸 가로수길',  cat: '오코노미야끼',      likes: 69,   comments: 20, shares: 4,    author: '디온집',     followers: 5400,   date: '2026-03-04', verdict: 'weak',     rank: null, note: '계정 규모 작음 (참여율 최고)' },
+  { name: '꿉당',           cat: '목살 (미쉐린)',     likes: 55,   comments: 31, shares: 1,    author: 'onl_mohaji', followers: 1200,   date: '2025-11-04', verdict: 'weak',     rank: null, note: '미쉐린 2025 선정이나 반응 낮음' },
+  { name: '날리',           cat: '다이닝바',          likes: 52,   comments: 8,  shares: 2,    author: '디깅서울',   followers: 10000,  date: '2026-06-03', verdict: 'weak',     rank: null, note: '반응 약함' },
+  { name: '프렌치쪽갈비',   cat: '쪽갈비',            likes: null, comments: 0,  shares: null, author: 'idoeats',    followers: 6000,   date: '2026-07-25', verdict: 'weak',     rank: null, note: '좋아요 비공개 · 자체 평점 7.8/10' },
+  { name: '동녘',           cat: '야장 한식주점',     likes: 1147, comments: 18, shares: 71,   author: '동녘 공식계정',     followers: 881,  date: '2026-04-25', verdict: 'excluded', rank: null, note: '업체 자체 홍보 → 제외' },
+  { name: '주토피아',       cat: '나폴리 피자',       likes: 305,  comments: 30, shares: 6,    author: '주토피아 공식계정', followers: 2700, date: '2026-06-07', verdict: 'excluded', rank: null, note: '업체 자체 홍보 → 제외' },
+  { name: '멘쇼쿠',         cat: '라멘 (흑백요리사)', likes: null, comments: 3,  shares: null, author: '멘쇼쿠 공식계정',   followers: 3500, date: '2026-07-21', verdict: 'excluded', rank: null, note: '업체 자체 홍보 → 제외' },
+];
+
+const CRITERIA = [
+  { n: '01', title: '가게 공식계정 제외', body: '홍보 글이라 반응 수를 다른 후보와 같은 잣대로 볼 수 없음. 동녘·주토피아·멘쇼쿠가 여기 해당.' },
+  { n: '02', title: '좋아요 수로 정렬', body: '남은 제3자 리뷰·큐레이션 계정 게시물만 모아 좋아요 수 기준으로 순위를 매김.' },
+  { n: '03', title: '바로 갈 수 있는 곳 우대', body: '캡션에 주소·가격·영업시간이 적혀 있어 바로 방문할 수 있는 게시물에 가점.' },
+];
+
+const NOTES = [
+  '좋아요·댓글·공유 수는 2026-09-01 기준 값이며 계속 변합니다.',
+  '인스타그램 맛집 게시물은 협찬·광고가 표시되지 않는 경우가 많습니다. 세 픽 모두 캡션에 유료광고 표기는 없었으나 실제 협찬 여부는 확인 불가.',
+  '반응 수가 큰 계정일수록 절대 좋아요 수가 유리합니다. 참여율(좋아요/팔로워) 기준으로는 디온집의 핫쵸 게시물(1.3%)이 1위 테보(0.35%)보다 높습니다.',
+  '가격·영업시간은 게시물 작성 시점 기준이라 방문 전 네이버플레이스·캐치테이블에서 재확인을 권합니다.',
+  '제외한 3곳(동녘·주토피아·멘쇼쿠)은 홍보 게시물이라 순위에서 뺐을 뿐, 가게 자체의 평가가 낮다는 뜻은 아닙니다. 특히 멘쇼쿠는 흑백요리사 출연 이력이 있습니다.',
+];
+
+// ========================================
+// 🛠 Utils
+// ========================================
+
+const fmt = (n) => (n === null || n === undefined ? '비공개' : n.toLocaleString('ko-KR'));
+const fmtFollowers = (n) => (n >= 10000 ? (n / 10000).toFixed(n % 10000 === 0 ? 0 : 1) + '만' : n.toLocaleString('ko-KR'));
+const engagement = (c) => (c.likes === null || !c.followers ? null : (c.likes / c.followers) * 100);
+
+// ========================================
+// 🎨 Design System Components
+// ========================================
+
+function Badge({ children, variant = 'default', className = '' }) {
+  const variants = {
+    default: 'bg-white/5 text-zinc-300 ring-1 ring-white/10',
+    accent: 'bg-orange-500/15 text-orange-300 ring-1 ring-orange-400/30',
+    muted: 'bg-white/[0.03] text-zinc-500 ring-1 ring-white/5',
+    danger: 'bg-red-500/10 text-red-300/90 ring-1 ring-red-400/20',
+  };
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${variants[variant]} ${className}`}>
+      {children}
+    </span>
+  );
+}
+
+function Button({ children, variant = 'primary', size = 'md', className = '', ...props }) {
+  const base = 'inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0b] disabled:opacity-40 disabled:pointer-events-none';
+  const variants = {
+    primary: 'bg-white text-zinc-900 hover:bg-zinc-200 active:scale-[.98]',
+    secondary: 'bg-white/[0.06] text-zinc-100 ring-1 ring-white/10 hover:bg-white/[0.12] active:scale-[.98]',
+    ghost: 'text-zinc-400 hover:text-zinc-100 hover:bg-white/5',
+    insta: 'insta-gradient text-white hover:brightness-110 active:scale-[.98]',
+  };
+  const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-4 py-2 text-sm', lg: 'px-6 py-3 text-base' };
+  return (
+    <button className={`${base} ${variants[variant]} ${sizes[size]} ${className}`} {...props}>
+      {children}
+    </button>
+  );
+}
+
+function Card({ children, className = '' }) {
+  return (
+    <div className={`rounded-2xl bg-white/[0.03] ring-1 ring-white/[0.08] ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+function Stat({ label, value, sub, emphasis = false }) {
+  return (
+    <div className={`rounded-xl px-3 py-2.5 ring-1 ${emphasis ? 'bg-orange-500/10 ring-orange-400/25' : 'bg-white/[0.03] ring-white/[0.06]'}`}>
+      <div className="text-[11px] uppercase tracking-wider text-zinc-500">{label}</div>
+      <div className={`num mt-0.5 text-lg font-bold ${emphasis ? 'text-orange-300' : 'text-zinc-100'}`}>{value}</div>
+      {sub && <div className="mt-0.5 text-[11px] text-zinc-500">{sub}</div>}
+    </div>
+  );
+}
+
+function Modal({ isOpen, onClose, title, children }) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+      role="dialog" aria-modal="true" aria-label={title}
+      onClick={onClose}
+    >
+      <div className="relative max-h-full w-full max-w-2xl overflow-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-3 flex items-center justify-between gap-4">
+          <h3 className="text-sm font-medium text-zinc-300">{title}</h3>
+          <Button variant="secondary" size="sm" onClick={onClose} aria-label="닫기">닫기 ✕</Button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ icon, label, children }) {
+  return (
+    <div className="flex gap-3 border-b border-white/[0.06] py-2.5 last:border-0">
+      <span aria-hidden="true" className="w-5 shrink-0 text-center text-sm">{icon}</span>
+      <span className="w-16 shrink-0 text-xs text-zinc-500">{label}</span>
+      <span className="min-w-0 flex-1 text-sm text-zinc-200">{children}</span>
+    </div>
+  );
+}
+
+// ========================================
+// 🧩 Layout Components
+// ========================================
+
+function Header() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const nav = [
+    { href: '#picks', label: '픽 3선' },
+    { href: '#compare', label: '비교표' },
+    { href: '#method', label: '선정 기준' },
+    { href: '#notes', label: '참고' },
+  ];
+
+  return (
+    <header className={`sticky top-0 z-40 transition-all duration-300 ${scrolled ? 'border-b border-white/[0.08] bg-[#0a0a0b]/85 backdrop-blur-xl' : 'border-b border-transparent'}`}>
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-3.5">
+        <a href="#top" className="font-display flex items-center gap-2.5 text-base font-bold text-zinc-100">
+          <span className="insta-gradient flex h-7 w-7 items-center justify-center rounded-lg text-sm" aria-hidden="true">📍</span>
+          <span>#신사맛집</span>
+        </a>
+        <nav aria-label="주요 섹션" className="hidden items-center gap-1 md:flex">
+          {nav.map((n) => (
+            <a key={n.href} href={n.href}
+              className="rounded-full px-3 py-1.5 text-sm text-zinc-400 transition-colors hover:bg-white/5 hover:text-zinc-100">
+              {n.label}
+            </a>
+          ))}
+        </nav>
+        <a href={TAG_URL} target="_blank" rel="noopener noreferrer">
+          <Button variant="insta" size="sm">해시태그 보기 ↗</Button>
+        </a>
+      </div>
+    </header>
+  );
+}
+
+function Hero() {
+  const totalLikes = PICKS.reduce((a, p) => a + p.likes, 0);
+  const stats = [
+    { k: '분석 게시물', v: '13', u: '건' },
+    { k: '최종 픽', v: '3', u: '곳' },
+    { k: '제외 (공식계정)', v: '3', u: '건' },
+    { k: '픽 3곳 좋아요 합', v: fmt(totalLikes), u: '' },
+  ];
+
+  return (
+    <section id="top" className="glow-bg relative overflow-hidden">
+      <div className="relative mx-auto max-w-6xl px-5 pb-16 pt-16 sm:pt-24">
+        <div className="fade-up">
+          <Badge variant="accent">Instagram 해시태그 리서치 · {SURVEY_DATE}</Badge>
+        </div>
+        <h1 className="fade-up font-display mt-6 text-4xl font-bold leading-[1.15] tracking-tight text-zinc-50 sm:text-6xl"
+            style={{ animationDelay: '.06s' }}>
+          신사에서 <span className="text-gradient">진짜 반응 좋았던</span><br className="hidden sm:block" /> 맛집 3곳
+        </h1>
+        <p className="fade-up mt-5 max-w-2xl text-base leading-relaxed text-zinc-400 sm:text-lg"
+           style={{ animationDelay: '.12s' }}>
+          <code className="rounded bg-white/5 px-1.5 py-0.5 text-zinc-300">#신사맛집</code> 게시물 13건을 하나씩 열어
+          좋아요·댓글·공유 수와 작성 계정 팔로워를 직접 세어 뽑았습니다.
+          가게가 자기 계정으로 올린 홍보 글은 뺐습니다.
+        </p>
+
+        <dl className="fade-up mt-10 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4" style={{ animationDelay: '.18s' }}>
+          {stats.map((s) => (
+            <div key={s.k} className="rounded-xl bg-white/[0.03] px-4 py-3 ring-1 ring-white/[0.07]">
+              <dt className="text-[11px] tracking-wide text-zinc-500">{s.k}</dt>
+              <dd className="num mt-1 text-2xl font-bold text-zinc-100">
+                {s.v}<span className="ml-0.5 text-sm font-medium text-zinc-500">{s.u}</span>
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        <div className="fade-up mt-9 flex flex-wrap gap-3" style={{ animationDelay: '.24s' }}>
+          <a href="#picks"><Button size="lg">픽 3선 보기 ↓</Button></a>
+          <a href="#method"><Button variant="secondary" size="lg">어떻게 골랐나</Button></a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SectionTitle({ eyebrow, title, desc }) {
+  return (
+    <div className="mb-8">
+      {eyebrow && <div className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-400/80">{eyebrow}</div>}
+      <h2 className="font-display text-2xl font-bold tracking-tight text-zinc-50 sm:text-3xl">{title}</h2>
+      {desc && <p className="mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400">{desc}</p>}
+    </div>
+  );
+}
+
+// ========================================
+// 📄 Page Sections
+// ========================================
+
+function PickCard({ pick, onOpenImage }) {
+  const [imgOk, setImgOk] = useState(true);
+  const rate = ((pick.likes / pick.followers) * 100).toFixed(2);
+
+  return (
+    <Card className="fade-up overflow-hidden">
+      <div className="grid gap-0 lg:grid-cols-[minmax(0,340px)_1fr]">
+        {/* 스크린샷 */}
+        <div className="relative border-b border-white/[0.06] lg:border-b-0 lg:border-r">
+          {imgOk ? (
+            <button
+              type="button"
+              onClick={() => onOpenImage(pick)}
+              className="group block h-full w-full cursor-zoom-in bg-black/40"
+              aria-label={`${pick.name} 게시물 스크린샷 크게 보기`}
+            >
+              <img
+                src={pick.image} alt={`${pick.name} 인스타그램 게시물 스크린샷`}
+                loading="lazy" onError={() => setImgOk(false)}
+                className="h-56 w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.03] lg:h-full lg:max-h-[440px]"
+              />
+              <span className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-black/70 px-2.5 py-1 text-[11px] text-zinc-200 opacity-0 ring-1 ring-white/15 transition-opacity group-hover:opacity-100">
+                크게 보기 🔍
+              </span>
+            </button>
+          ) : (
+            <div className="flex h-56 items-center justify-center bg-white/[0.02] p-6 text-center text-xs leading-relaxed text-zinc-500 lg:h-full">
+              스크린샷 이미지를 불러오지 못했습니다.<br />
+              <span className="text-zinc-600">({pick.image})</span>
+            </div>
+          )}
+          <div className={`absolute left-3 top-3 flex items-center gap-1.5 rounded-full bg-gradient-to-r ${pick.accent} px-3 py-1 text-xs font-bold text-zinc-900 shadow-lg`}>
+            <span aria-hidden="true">{pick.medal}</span> {pick.rank}위
+          </div>
+        </div>
+
+        {/* 내용 */}
+        <div className="p-5 sm:p-7">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="font-display text-2xl font-bold text-zinc-50 sm:text-3xl">{pick.name}</h3>
+              <p className="mt-1 text-sm text-zinc-400">{pick.category} · {pick.sub}</p>
+            </div>
+            <Badge variant="accent">좋아요 {fmt(pick.likes)}</Badge>
+          </div>
+
+          <p className="mt-4 text-[15px] leading-relaxed text-zinc-300">{pick.blurb}</p>
+
+          <div className="mt-5 rounded-xl border-l-2 border-orange-400/70 bg-orange-500/[0.07] px-4 py-3">
+            <div className="text-xs font-bold text-orange-300">★ {pick.highlight.label}</div>
+            <div className="mt-1 text-sm text-zinc-300">{pick.highlight.text}</div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <Stat label="좋아요" value={fmt(pick.likes)} emphasis />
+            <Stat label="댓글" value={fmt(pick.comments)} />
+            <Stat label="공유" value={fmt(pick.shares)} />
+            <Stat label="참여율" value={rate + '%'} sub="좋아요/팔로워" />
+          </div>
+
+          <div className="mt-5">
+            <InfoRow icon="📍" label="위치">{pick.where}</InfoRow>
+            <InfoRow icon="🕒" label="영업시간">{pick.hours}</InfoRow>
+            <InfoRow icon="💸" label="가격">{pick.price}</InfoRow>
+            <InfoRow icon="✍️" label="작성 계정">
+              <a href={`https://www.instagram.com/${pick.authorHandle}/`} target="_blank" rel="noopener noreferrer"
+                 className="text-zinc-100 underline decoration-white/25 underline-offset-4 hover:decoration-orange-400">
+                {pick.author} @{pick.authorHandle}
+              </a>
+              <span className="text-zinc-500"> · 팔로워 {fmtFollowers(pick.followers)}</span>
+            </InfoRow>
+            <InfoRow icon="🗓" label="게시일">{pick.date}</InfoRow>
+          </div>
+
+          {pick.caution && (
+            <p className="mt-4 rounded-lg bg-red-500/[0.07] px-3 py-2 text-xs text-red-300/90 ring-1 ring-red-400/15">
+              ⚠️ {pick.caution}
+            </p>
+          )}
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            <a href={pick.link} target="_blank" rel="noopener noreferrer">
+              <Button variant="insta" size="sm">원본 게시물 ↗</Button>
+            </a>
+            {pick.storeHandle && (
+              <a href={`https://www.instagram.com/${pick.storeHandle}/`} target="_blank" rel="noopener noreferrer">
+                <Button variant="secondary" size="sm">@{pick.storeHandle} ↗</Button>
+              </a>
+            )}
+            {pick.place && (
+              <a href={`https://map.naver.com/p/search/${encodeURIComponent(pick.name + ' ' + pick.place)}`}
+                 target="_blank" rel="noopener noreferrer">
+                <Button variant="secondary" size="sm">지도에서 찾기 ↗</Button>
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function PicksSection({ onOpenImage }) {
+  return (
+    <section id="picks" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-16">
+      <SectionTitle
+        eyebrow="The Picks"
+        title="최종 픽 3곳"
+        desc="제3자 리뷰·큐레이션 계정 게시물만 놓고 좋아요 순으로 정렬한 결과입니다. 스크린샷을 누르면 원본 게시물 캡처를 크게 볼 수 있습니다."
+      />
+      <div className="space-y-6">
+        {PICKS.map((p) => (
+          <PickCard key={p.name} pick={p} onOpenImage={onOpenImage} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+const COLUMNS = [
+  { key: 'name',       label: '가게',      align: 'left',  sortable: false },
+  { key: 'cat',        label: '업종',      align: 'left',  sortable: false },
+  { key: 'likes',      label: '좋아요',    align: 'right', sortable: true },
+  { key: 'comments',   label: '댓글',      align: 'right', sortable: true },
+  { key: 'shares',     label: '공유',      align: 'right', sortable: true },
+  { key: 'engagement', label: '참여율',    align: 'right', sortable: true },
+  { key: 'author',     label: '작성 계정', align: 'left',  sortable: false },
+  { key: 'date',       label: '게시일',    align: 'left',  sortable: true },
+  { key: 'note',       label: '판정',      align: 'left',  sortable: false },
+];
+
+function CompareSection() {
+  const [sortKey, setSortKey] = useState('likes');
+  const [desc, setDesc] = useState(true);
+  const [showExcluded, setShowExcluded] = useState(true);
+
+  const rows = useMemo(() => {
+    const list = CANDIDATES
+      .filter((c) => showExcluded || c.verdict !== 'excluded')
+      .map((c) => ({ ...c, engagement: engagement(c) }));
+
+    const val = (r) => {
+      const v = r[sortKey];
+      if (sortKey === 'date') return v;
+      return v === null || v === undefined ? -Infinity : v;
+    };
+    return list.sort((a, b) => {
+      const av = val(a), bv = val(b);
+      if (typeof av === 'string' || typeof bv === 'string') {
+        return desc ? String(bv).localeCompare(String(av)) : String(av).localeCompare(String(bv));
+      }
+      if (av === bv) return a.name.localeCompare(b.name, 'ko');
+      return desc ? bv - av : av - bv;
+    });
+  }, [sortKey, desc, showExcluded]);
+
+  const maxLikes = useMemo(() => Math.max(...rows.map((r) => r.likes || 0), 1), [rows]);
+
+  const toggleSort = useCallback((key) => {
+    setSortKey((prev) => {
+      if (prev === key) { setDesc((d) => !d); return prev; }
+      setDesc(true);
+      return key;
+    });
+  }, []);
+
+  const verdictBadge = (r) => {
+    if (r.verdict === 'pick') return <Badge variant="accent">✅ {r.rank}위</Badge>;
+    if (r.verdict === 'excluded') return <Badge variant="danger">❌ 제외</Badge>;
+    if (r.verdict === 'runner') return <Badge>4위</Badge>;
+    return <Badge variant="muted">{r.note}</Badge>;
+  };
+
+  return (
+    <section id="compare" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-16">
+      <SectionTitle
+        eyebrow="Full Data"
+        title="후보 12건 비교표"
+        desc="열 제목을 누르면 정렬됩니다. 참여율은 좋아요 ÷ 작성 계정 팔로워 값으로, 계정 규모 차이를 보정해서 보고 싶을 때 쓰세요."
+      />
+
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Button variant={showExcluded ? 'secondary' : 'primary'} size="sm" onClick={() => setShowExcluded((v) => !v)}>
+          {showExcluded ? '공식계정 3건 숨기기' : '공식계정 3건 다시 보기'}
+        </Button>
+        <span className="text-xs text-zinc-500">
+          정렬: <strong className="text-zinc-300">{COLUMNS.find((c) => c.key === sortKey)?.label}</strong> {desc ? '내림차순' : '오름차순'}
+        </span>
+      </div>
+
+      <Card className="overflow-hidden">
+        <div className="thin-scroll overflow-x-auto">
+          <table className="w-full min-w-[880px] text-sm">
+            <caption className="sr-only">#신사맛집 후보 게시물 반응 비교표</caption>
+            <thead>
+              <tr className="border-b border-white/10 bg-white/[0.02]">
+                {COLUMNS.map((col) => (
+                  <th key={col.key} scope="col"
+                      aria-sort={sortKey === col.key ? (desc ? 'descending' : 'ascending') : 'none'}
+                      className={`px-3 py-3 text-xs font-semibold text-zinc-400 ${col.align === 'right' ? 'text-right' : 'text-left'}`}>
+                    {col.sortable ? (
+                      <button type="button" onClick={() => toggleSort(col.key)}
+                        className="rounded px-1 py-0.5 transition-colors hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400/60">
+                        {col.label}
+                        <span aria-hidden="true" className={sortKey === col.key ? 'ml-1 text-orange-400' : 'ml-1 text-zinc-700'}>
+                          {sortKey === col.key ? (desc ? '▼' : '▲') : '↕'}
+                        </span>
+                      </button>
+                    ) : col.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => {
+                const isPick = r.verdict === 'pick';
+                const isExcluded = r.verdict === 'excluded';
+                return (
+                  <tr key={r.name}
+                      className={`border-b border-white/[0.05] transition-colors last:border-0 hover:bg-white/[0.04] ${isExcluded ? 'opacity-55' : ''} ${isPick ? 'bg-orange-500/[0.05]' : ''}`}>
+                    <th scope="row" className="px-3 py-3 text-left font-bold text-zinc-100">{r.name}</th>
+                    <td className="px-3 py-3 text-zinc-400">{r.cat}</td>
+                    <td className="px-3 py-3 text-right">
+                      <div className={`num font-bold ${isPick ? 'text-orange-300' : 'text-zinc-200'}`}>{fmt(r.likes)}</div>
+                      {r.likes !== null && (
+                        <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/[0.06]">
+                          <div className={`bar h-full rounded-full ${isPick ? 'bg-orange-400' : 'bg-zinc-500'}`}
+                               style={{ width: `${(r.likes / maxLikes) * 100}%` }} />
+                        </div>
+                      )}
+                    </td>
+                    <td className="num px-3 py-3 text-right text-zinc-300">{fmt(r.comments)}</td>
+                    <td className="num px-3 py-3 text-right text-zinc-300">{r.shares === null ? '—' : fmt(r.shares)}</td>
+                    <td className="num px-3 py-3 text-right text-zinc-300">
+                      {r.engagement === null ? '—' : r.engagement.toFixed(2) + '%'}
+                    </td>
+                    <td className="px-3 py-3 text-zinc-400">
+                      {r.author}
+                      <span className="block text-[11px] text-zinc-600">팔로워 {fmtFollowers(r.followers)}</span>
+                    </td>
+                    <td className="num px-3 py-3 text-zinc-500">{r.date}</td>
+                    <td className="px-3 py-3">{verdictBadge(r)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      <p className="mt-4 text-xs leading-relaxed text-zinc-500">
+        프렌치쪽갈비·멘쇼쿠는 좋아요 수가 비공개라 참여율을 계산할 수 없습니다(— 로 표시).
+      </p>
+    </section>
+  );
+}
+
+function MethodSection() {
+  return (
+    <section id="method" className="scroll-mt-20 border-y border-white/[0.06] bg-white/[0.015]">
+      <div className="mx-auto max-w-6xl px-5 py-16">
+        <SectionTitle
+          eyebrow="Method"
+          title="어떻게 골랐나"
+          desc={`Playwright MCP로 #신사맛집 해시태그를 검색해 단일 가게를 소개하는 게시물 13건을 개별 방문했습니다. (로그인 계정 @ruucm · 조사일 ${SURVEY_DATE})`}
+        />
+        <div className="grid gap-4 md:grid-cols-3">
+          {CRITERIA.map((c) => (
+            <Card key={c.n} className="p-6">
+              <div className="num text-3xl font-black text-white/10">{c.n}</div>
+              <h3 className="mt-3 text-base font-bold text-zinc-100">{c.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">{c.body}</p>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function NotesSection() {
+  return (
+    <section id="notes" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-16">
+      <SectionTitle eyebrow="Caveats" title="읽기 전에 알아둘 것" />
+      <ul className="space-y-3">
+        {NOTES.map((n, i) => (
+          <li key={i} className="flex gap-3 rounded-xl bg-white/[0.025] px-4 py-3.5 ring-1 ring-white/[0.06]">
+            <span aria-hidden="true" className="mt-0.5 text-amber-400/80">⚠️</span>
+            <span className="text-sm leading-relaxed text-zinc-400">{n}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function Footer() {
+  return (
+    <footer className="border-t border-white/[0.06]">
+      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-10 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="font-display text-sm font-bold text-zinc-300">#신사맛집 인스타 픽 3선</div>
+          <p className="mt-1 text-xs text-zinc-600">
+            출처: Instagram 해시태그 검색 · 조사일 {SURVEY_DATE} · 수치는 조사 시점 기준
+          </p>
+        </div>
+        <a href={TAG_URL} target="_blank" rel="noopener noreferrer">
+          <Button variant="secondary" size="sm">인스타그램에서 직접 보기 ↗</Button>
+        </a>
+      </div>
+    </footer>
+  );
+}
+
+// ========================================
+// 🚀 App
+// ========================================
+
+function App() {
+  const [zoomed, setZoomed] = useState(null);
+  const closeZoom = useCallback(() => setZoomed(null), []);
+
+  return (
+    <div className="min-h-screen">
+      <a href="#picks" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:text-zinc-900">
+        본문으로 건너뛰기
+      </a>
+      <Header />
+      <main>
+        <Hero />
+        <PicksSection onOpenImage={setZoomed} />
+        <CompareSection />
+        <MethodSection />
+        <NotesSection />
+      </main>
+      <Footer />
+
+      <Modal isOpen={!!zoomed} onClose={closeZoom} title={zoomed ? `${zoomed.name} · 원본 게시물 스크린샷` : ''}>
+        {zoomed && (
+          <div>
+            <img src={zoomed.image} alt={`${zoomed.name} 인스타그램 게시물 스크린샷 (확대)`}
+                 className="w-full rounded-xl ring-1 ring-white/10" />
+            <div className="mt-3 flex justify-center">
+              <a href={zoomed.link} target="_blank" rel="noopener noreferrer">
+                <Button variant="insta" size="sm">인스타그램에서 열기 ↗</Button>
+              </a>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
