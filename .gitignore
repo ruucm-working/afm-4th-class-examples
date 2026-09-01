@@ -2,3 +2,10 @@
 __pycache__/
 *.pyc
 .playwright-mcp/
+
+# 서버 시크릿
+.env
+.env.local
+
+# node
+node_modules/
