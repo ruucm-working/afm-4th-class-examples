@@ -1,0 +1,13 @@
+{
+  "name": "maeumgyeol-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "마음결 심리상담 챗봇 - OpenAI 키를 감추는 단일 파일 백엔드",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
